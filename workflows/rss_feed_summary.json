@@ -1,0 +1,770 @@
+{
+  "name": "rss_feed_summary",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            },
+            {
+              "triggerAtHour": 18
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c60e6ea1-d854-41f4-b020-951d0e30a93a",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "links",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "ebdd3309-f1df-4e5a-b9dd-56fbd1770cdb",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.links }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "b0fdc567-b4e5-465a-b89b-546ae2b0974f",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "fieldsToMatchString": "link",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1696,
+        -16
+      ],
+      "id": "da3fa370-2c5c-4b88-a785-7cec4c9a58eb",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        2064,
+        -16
+      ],
+      "id": "624731f2-4e0d-4a34-894d-ccc99438dfc7",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-nano",
+          "mode": "list",
+          "cachedResultName": "gpt-5-nano"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2496,
+        208
+      ],
+      "id": "68a1cc77-ad3f-478d-90a3-76748dc1822e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "DTTnucwinc9RlWpn",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"link\": \"https://test.com\",\n  \"content\" : \"React 18 버전 신규 갱신에 대한 내용을 담고 있습니다. 특히 React 18에서는 Transitions 기능이 추가되었습니다. Transition은 긴급한 업데이트와 긴급하지 않은 업데이트를 구분하기 위한 React의 새로운 개념입니다. 긴급한 업데이트는 입력, 클릭, 누르기 등과 같은 직접적인 상호작용을 반영합니다. Transition 업데이트는 UI를 한 화면에서 다른 화면으로 전환합니다. 입력, 클릭, 누르기 등의 긴급한 업데이트는 실제 사물의 동작 방식에 대한 우리의 직관과 일치하도록 즉각적인 반응이 필요합니다. 그렇지 않으면 잘못됐다고 느끼기 때문입니다. 그러나 Transition은 사용자가 화면에 모든 중간값을 볼 것으로 기대하지 않기 때문에 다릅니다.\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2640,
+        208
+      ],
+      "id": "ce083a7d-d7af-4ed6-b45f-cefffc1158c0",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 입력 데이터 가져오기\nconst items = $input.all();\n\n// HTML 생성 함수\nfunction createHTML(articles) {\n  const articleCards = articles.map(article => {\n    const date = new Date(article.pubDate).toLocaleDateString('ko-KR', {\n      year: 'numeric',\n      month: 'long',\n      day: 'numeric'\n    });\n    \n    return `\n      <div class=\"article-card\">\n        <h2 class=\"article-title\">${article.title}</h2>\n        <div class=\"article-meta\">\n          <span class=\"article-date\">${date}</span>\n        </div>\n        <div class=\"article-content\">\n          ${article.content}\n        </div>\n        <a href=\"${article.link}\" class=\"article-link\" target=\"_blank\">원문 보기 →</a>\n      </div>\n    `;\n  }).join('');\n\n  return `\n<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>기술 블로그 아티클</title>\n  <style>\n    * {\n      margin: 0;\n      padding: 0;\n      box-sizing: border-box;\n    }\n    \n    body {\n      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;\n      line-height: 1.6;\n      color: #333;\n      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n      min-height: 100vh;\n      padding: 40px 20px;\n    }\n    \n    .container {\n      max-width: 900px;\n      margin: 0 auto;\n    }\n    \n    .header {\n      text-align: center;\n      margin-bottom: 40px;\n    }\n    \n    .header h1 {\n      font-size: 2.5rem;\n      margin-bottom: 10px;\n      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);\n    }\n    \n    .article-card {\n      background: white;\n      border-radius: 12px;\n      padding: 30px;\n      margin-bottom: 30px;\n      box-shadow: 0 10px 30px rgba(0,0,0,0.2);\n      transition: transform 0.3s ease, box-shadow 0.3s ease;\n    }\n    \n    .article-card:hover {\n      transform: translateY(-5px);\n      box-shadow: 0 15px 40px rgba(0,0,0,0.3);\n    }\n    \n    .article-title {\n      font-size: 1.8rem;\n      color: #667eea;\n      margin-bottom: 15px;\n      font-weight: 700;\n    }\n    \n    .article-meta {\n      display: flex;\n      gap: 15px;\n      margin-bottom: 20px;\n      padding-bottom: 15px;\n      border-bottom: 2px solid #f0f0f0;\n    }\n    \n    .article-date {\n      color: #888;\n      font-size: 0.9rem;\n    }\n    \n    .article-content {\n      color: #555;\n      line-height: 1.8;\n      margin-bottom: 20px;\n      white-space: pre-wrap;\n    }\n    \n    .article-link {\n      display: inline-block;\n      color: #667eea;\n      text-decoration: none;\n      font-weight: 600;\n      padding: 10px 20px;\n      border: 2px solid #667eea;\n      border-radius: 6px;\n      transition: all 0.3s ease;\n    }\n    \n    .article-link:hover {\n      background: #667eea;\n      color: white;\n    }\n    \n    @media (max-width: 768px) {\n      .header h1 {\n        font-size: 2rem;\n      }\n      \n      .article-card {\n        padding: 20px;\n      }\n      \n      .article-title {\n        font-size: 1.4rem;\n      }\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>📚 기술 블로그 아티클</h1>\n      <p>최신 기술 트렌드와 개발 인사이트</p>\n    </div>\n    ${articleCards}\n  </div>\n</body>\n</html>\n  `;\n}\n\nconst allArticles = items.flatMap(item => item.json.data || []);\n\nconst html = createHTML(allArticles);\n\n// 결과 반환\nreturn [{\n    html \n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3680,
+        -16
+      ],
+      "id": "4a2ee12b-86f0-404f-8477-6dd953f65b1b",
+      "name": "Create HTML"
+    },
+    {
+      "parameters": {
+        "sendTo": "Your Email",
+        "subject": "Daily Tech News",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3888,
+        -16
+      ],
+      "id": "9cd47832-8284-4643-af21-571a358d2ac1",
+      "name": "Send a message",
+      "webhookId": "3c9c4295-54dd-45ba-b057-630133dcea20",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nx3RFgTpAKPis5vn",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "value": "rss_links",
+          "mode": "list",
+          "cachedResultName": "rss_links"
+        },
+        "dataMode": "defineBelow",
+        "valuesToSend": {
+          "values": [
+            {
+              "column": "title",
+              "value": "={{ $json.title }}"
+            },
+            {
+              "column": "link",
+              "value": "={{ $json.link }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        1904,
+        272
+      ],
+      "id": "00a71f8c-260b-4863-ae31-81fff35ffb22",
+      "name": "Insert rows in a table",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "maxTries": 5,
+      "credentials": {
+        "mySql": {
+          "id": "nTizUeVu9mi8FAel",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        3472,
+        -16
+      ],
+      "id": "e961f463-26b7-43ce-bdfa-6b15a5d49503",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "020b4c11-f319-4794-8fc1-c139ac130d70",
+              "name": "links",
+              "value": "[\n \"https://medium.com/feed/musinsa-tech\",\n \"https://medium.com/feed/daangn\",\n \"https://d2.naver.com/d2.atom\"\n]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "3b91939e-84d8-4756-b039-e799543b54f6",
+      "name": "Set RSS"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7ec82b93-9542-47f7-8cf2-f05250f9cd84",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "ceb9aa73-a848-466b-bea7-fc816697285b",
+              "name": "link",
+              "value": "={{ $json.link }}",
+              "type": "string"
+            },
+            {
+              "id": "b0a10c01-80ae-400d-9dbf-281a6094779c",
+              "name": "pubDate",
+              "value": "={{ $json.pubDate }}",
+              "type": "string"
+            },
+            {
+              "id": "ef8f6fe4-711a-4eb9-8ffc-ee45c45d8a8a",
+              "name": "content",
+              "value": "={{ $json.hasField('content:encoded') ? $json['content:encoded'] : $json['content']}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        0
+      ],
+      "id": "4301620b-8b9b-4ee3-98b8-9a913d709b04",
+      "name": "Mapping"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0accbe62-4270-476d-a4dd-a871d9cef569",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "참가",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "0920debd-ebf4-4383-95a1-247898e3bfcb",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "Podcast",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "77ed41a9-dd5c-40ae-b721-98b9cc1e8dab",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "신청",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "a9da54bc-774d-44b3-a767-1118041cb28b",
+      "name": "Filter Valid RSS"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  CASE \n    WHEN EXISTS (\n      SELECT 1 \n      FROM rss_links \n      WHERE link = '{{ $json.link }}'\n    ) THEN 1\n    ELSE 0\nEND AS exist,\n  '{{ $json.link }}' as link;\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        1360,
+        -176
+      ],
+      "id": "fd48c48e-f2c0-4896-9761-03a8854a58b7",
+      "name": "Found Exist RSS",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "maxTries": 5,
+      "credentials": {
+        "mySql": {
+          "id": "nTizUeVu9mi8FAel",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f7b0d598-a8be-43ba-a78c-dc8fdee6cad3",
+              "leftValue": "={{ $json.exist }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1888,
+        -16
+      ],
+      "id": "bd28fc99-21d2-46d6-9308-ff0d81ef9577",
+      "name": "Filter new RSS only"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=너는 숙련된 개발자이자 기술 블로거야.  \n아래는 기술 관련 블로그 게시물 혹은 뉴스 기사야.  \n이 내용을 개발자 관점에서 깊이 있게 요약하되, 다음 기준을 반드시 지켜.\n\n## 요약 규칙\n1. 핵심 주제와 기술적 흐름(문제 → 해결 → 결과)을 중심으로 설명할 것.  \n2. 구체적인 기술 스택, 알고리즘, 구조, API, 코드 로직 등 **기술적인 디테일을 최대한 유지**할 것.  \n3. 불필요한 서론, 마케팅 문구, 감상적 표현은 제외할 것.  \n4. 요약은 **3~6문장 이내**로 명확하고 논리적으로 작성할 것.  \n5. 마지막 문단에는 해당 글에서 언급된 **핵심 기술 용어를 간략히 정리(개념 한 줄씩)** 할 것.  \n6. 독자가 같은 개발자라고 가정하고, 코드나 아키텍처 이해에 도움이 되도록 기술적인 포인트를 강조할 것.\n\n## 출력 형식\n1. 반드시 아래와 같은 json으로 출력할것\n\n### 출력 예시\n\n{\n\"link\" : \"https://test.com\"    \n,\"content\" : \"\n이 글은 FastAPI를 기반으로 비동기 백엔드 서버를 구성하는 방법을 다룬다.  \nSQLAlchemy의 async engine을 사용하여 I/O 병목을 최소화하고, Pydantic 모델을 통한 타입 안정성을 확보했다.  \n또한 PostgreSQL의 connection pooling 설정과 transaction 관리 전략을 구체적으로 다루며, 실시간 API 응답 성능 향상을 목표로 한다.\n\n📘 기술 개념 정리:\n- FastAPI: Python 기반 비동기 웹 프레임워크  \n- SQLAlchemy Async: 비동기 DB ORM 지원 모듈  \n- Connection Pooling: DB 연결을 재사용해 성능을 높이는 기법\"\n}\n\n### 사용자 입력\n\n## 링크\n{{ $json.link }}\n## 게시물\n{{ $json.content }}",
+        "hasOutputParser": true,
+        "options": {
+          "batching": {
+            "batchSize": 5
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        2496,
+        -32
+      ],
+      "id": "9066ef59-866a-492d-a226-50f3ae66318d",
+      "name": "AI Agent For Summary RSS"
+    },
+    {
+      "parameters": {
+        "jsCode": "const newInput = $input.all().map( item=> {\n  const title = item.json.title;\n  const pubDate = item.json.pubDate;  \n  const link = item.json.link;\n\n  let content = item.json.content?.trim() || item.json['content:encoded']?.trim() || \"\";\n\n  content = content\n    .replace(/<script[\\s\\S]*?>[\\s\\S]*?<\\/script>/gi, '')\n    .replace(/<style[\\s\\S]*?>[\\s\\S]*?<\\/style>/gi, '')\n    .replace(/<!--[\\s\\S]*?-->/g, '')\n    .replace(/<[^>]+>/g, '')\n    .replace(/&nbsp;/g, ' ')\n    .replace(/&lt;/g, '<')\n    .replace(/&gt;/g, '>')\n    .replace(/&amp;/g, '&')\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/\\s+/g, ' ')\n    .trim();\n\n\n  return  {\n    title,\n    pubDate,\n    content,\n    link\n  }\n\n})\nreturn newInput"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        -16
+      ],
+      "id": "dbc74be7-b802-4850-84a3-02881405e958",
+      "name": "Remove Redundant Token"
+    },
+    {
+      "parameters": {
+        "content": "불필요한 토큰 제외 처리 ",
+        "height": 208,
+        "width": 192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        -80
+      ],
+      "id": "eb28b849-a564-4800-86b4-4e5d7d49267c",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ca29c437-2ba0-443f-9538-4194e10f049f",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "f2182948-cc1e-4940-8931-9444d1869ca8",
+              "name": "pubDate",
+              "value": "={{ $json.pubDate }}",
+              "type": "string"
+            },
+            {
+              "id": "67f9c34a-0787-47da-b543-5f3f0e42f600",
+              "name": "link",
+              "value": "={{ $json.link }}",
+              "type": "string"
+            },
+            {
+              "id": "c01cac5c-979b-49e4-b9e7-3db03b605a87",
+              "name": "content",
+              "value": "={{ $json.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3248,
+        -192
+      ],
+      "id": "a409f3aa-8b64-4b9a-96fb-683c853220c4",
+      "name": "Mapping2"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "fieldsToMatchString": "link",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3040,
+        -192
+      ],
+      "id": "02427fd8-393c-42fe-9c21-53530a0118ea",
+      "name": "Merge LLM Summary With Raw Input"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e2781af7-a140-4d4c-8fb1-9a81a987d205",
+              "name": "link",
+              "value": "={{ $json.output.link }}",
+              "type": "string"
+            },
+            {
+              "id": "3736a9df-cb14-412a-b900-7931239cb945",
+              "name": "content",
+              "value": "={{ $json.output.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2848,
+        -32
+      ],
+      "id": "17d505fb-4293-4216-a18f-2300e3640ba9",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {
+    "Set RSS": [
+      {
+        "json": {
+          "links": [
+            "https://medium.com/feed/musinsa-tech",
+            "https://medium.com/feed/daangn",
+            "https://d2.naver.com/d2.atom"
+          ]
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Mapping",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Filter new RSS only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in a table",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Remove Redundant Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent For Summary RSS",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent For Summary RSS",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create HTML": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Create HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set RSS": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mapping": {
+      "main": [
+        [
+          {
+            "node": "Filter Valid RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Valid RSS": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Found Exist RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Found Exist RSS": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter new RSS only": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent For Summary RSS": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Redundant Token": {
+      "main": [
+        [
+          {
+            "node": "AI Agent For Summary RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge LLM Summary With Raw Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mapping2": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge LLM Summary With Raw Input": {
+      "main": [
+        [
+          {
+            "node": "Mapping2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge LLM Summary With Raw Input",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Seoul",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "a4775018-584a-483f-8b35-e1f97af51232",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2a3b9bbef689cef053b0e1ad5cddf3be4dfa1a95afce34abb9942c7354e11bb9"
+  },
+  "id": "FeHOMe0dZ0QXuk6B",
+  "tags": []
+}
